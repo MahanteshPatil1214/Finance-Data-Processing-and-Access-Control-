@@ -21,13 +21,14 @@ public class FinancialRecord extends AbstractMappedEntity {
     @Column(nullable = false)
     private TransactionType type; // INCOME or EXPENSE
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String category; // e.g., Salary, Food, Rent
+    private Category category; // e.g., Salary, Food, Rent
 
     private String description;
 
     @Column(nullable = false)
-    private LocalDateTime transactionDate = LocalDateTime.now();
+    private LocalDateTime transactionDate; // The actual date of the expense
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
