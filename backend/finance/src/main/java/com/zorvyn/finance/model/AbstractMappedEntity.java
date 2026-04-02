@@ -11,23 +11,31 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-@EntityListeners(AuditingEntityListener.class)
 public abstract class AbstractMappedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
+    @Column(updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "display_id", unique = true, nullable = false)
+    @Column(unique = true, updatable = false, nullable = false)
     private String displayId;
 
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.displayId == null) {
+            this.displayId = "ID-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+    }
 }

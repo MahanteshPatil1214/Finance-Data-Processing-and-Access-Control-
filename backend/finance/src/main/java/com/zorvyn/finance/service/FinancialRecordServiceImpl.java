@@ -2,10 +2,14 @@ package com.zorvyn.finance.service;
 
 import com.zorvyn.finance.DTOs.DashboardSummaryDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordRequestDTO;
+import com.zorvyn.finance.DTOs.FinancialRecordResponseDTO;
+import com.zorvyn.finance.exception.ResourceNotFoundException;
 import com.zorvyn.finance.model.FinancialRecord;
 import com.zorvyn.finance.model.TransactionType;
 import com.zorvyn.finance.repository.FinancialRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -33,7 +37,6 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .map(FinancialRecord::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Category-wise totals
         var breakdown = records.stream()
                 .collect(Collectors.groupingBy(
                         r -> r.getCategory().name(),
@@ -51,21 +54,29 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
 
     @Override
     public void saveRecord(FinancialRecordRequestDTO request) {
-            FinancialRecord record = new FinancialRecord();
-            record.setAmount(request.getAmount());
-            record.setType(request.getType());
-            record.setCategory(request.getCategory());
-            record.setDescription(request.getDescription());
+        FinancialRecord record = new FinancialRecord();
+        record.setAmount(request.getAmount());
+        record.setType(request.getType());
+        record.setCategory(request.getCategory());
+        record.setDescription(request.getDescription());
 
-            // Logic: If user didn't provide a date, use current time
-            record.setTransactionDate(
-                    request.getTransactionDate() != null ? request.getTransactionDate() : LocalDateTime.now()
-            );
+        // Defaults to current time if missing
+        record.setTransactionDate(
+                request.getTransactionDate() != null ? request.getTransactionDate() : LocalDateTime.now()
+        );
 
-            // Logic: Generate a unique Display ID for the transaction
-            String txnId = "TXN-" + System.currentTimeMillis() % 100000;
-            record.setDisplayId(txnId);
+        recordRepository.save(record);
+    }
 
-            recordRepository.save(record);
+    @Override
+    public Page<FinancialRecordResponseDTO> getAllRecords(Pageable pageable) {
+        return recordRepository.findAll(pageable).map(FinancialRecordResponseDTO::new);
+    }
+
+    @Override
+    public void deleteRecord(String displayId) {
+        FinancialRecord record = recordRepository.findByDisplayId(displayId)
+                .orElseThrow(() -> new ResourceNotFoundException("FinancialRecord with id " + displayId + " not found."));
+        recordRepository.delete(record);
     }
 }
