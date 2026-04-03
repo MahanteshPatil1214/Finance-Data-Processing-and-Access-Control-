@@ -32,6 +32,10 @@ public abstract class AbstractMappedEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    private boolean isDeleted = false;
+
+    private LocalDateTime deletedAt;
+
     @PrePersist
     protected void onCreate() {
         if (this.displayId == null) {

@@ -5,6 +5,8 @@ import lombok.*;
 
 @Entity
 @Table(name = "users")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE users SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+@org.hibernate.annotations.Where(clause = "is_deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor

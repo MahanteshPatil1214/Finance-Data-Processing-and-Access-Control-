@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "financial_records")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE financial_records SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+@org.hibernate.annotations.Where(clause = "is_deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor

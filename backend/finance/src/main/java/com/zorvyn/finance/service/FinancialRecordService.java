@@ -14,5 +14,9 @@ public interface FinancialRecordService {
 
     Page<FinancialRecordResponseDTO> getAllRecords(Pageable pageable);
 
+    FinancialRecordResponseDTO getRecordById(String displayId);
+
+    FinancialRecordResponseDTO updateRecord(String displayId, FinancialRecordRequestDTO request);
+
     void deleteRecord(String displayId);
 }

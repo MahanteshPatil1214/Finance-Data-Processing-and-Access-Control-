@@ -23,9 +23,16 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     @Autowired
     private FinancialRecordRepository recordRepository;
 
+    @Autowired
+    private com.zorvyn.finance.repository.UserRepository userRepository;
+
+    private String getCurrentUserEmail() {
+        return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
     @Override
     public DashboardSummaryDTO getSummary() {
-        List<FinancialRecord> records = recordRepository.findAll();
+        List<FinancialRecord> records = recordRepository.findAllByCreator_Email(getCurrentUserEmail());
 
         BigDecimal totalIncome = records.stream()
                 .filter(r -> r.getType() == TransactionType.INCOME)
@@ -60,6 +67,11 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         record.setCategory(request.getCategory());
         record.setDescription(request.getDescription());
 
+        // Attach creator
+        com.zorvyn.finance.model.User creator = userRepository.findByEmail(getCurrentUserEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        record.setCreator(creator);
+
         // Defaults to current time if missing
         record.setTransactionDate(
                 request.getTransactionDate() != null ? request.getTransactionDate() : LocalDateTime.now()
@@ -70,11 +82,36 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
 
     @Override
     public Page<FinancialRecordResponseDTO> getAllRecords(Pageable pageable) {
-        return recordRepository.findAll(pageable).map(FinancialRecordResponseDTO::new);
+        return recordRepository.findAllByCreator_Email(getCurrentUserEmail(), pageable).map(FinancialRecordResponseDTO::new);
+    }
+
+    @Override
+    public FinancialRecordResponseDTO getRecordById(String displayId) {
+        FinancialRecord record = recordRepository.findByDisplayIdAndCreator_Email(displayId, getCurrentUserEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("FinancialRecord with id " + displayId + " not found or unauthorized."));
+        return new FinancialRecordResponseDTO(record);
+    }
+
+    @Override
+    public FinancialRecordResponseDTO updateRecord(String displayId, FinancialRecordRequestDTO request) {
+        FinancialRecord record = recordRepository.findByDisplayIdAndCreator_Email(displayId, getCurrentUserEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("FinancialRecord with id " + displayId + " not found or unauthorized."));
+        
+        record.setAmount(request.getAmount());
+        record.setType(request.getType());
+        record.setCategory(request.getCategory());
+        record.setDescription(request.getDescription());
+        if (request.getTransactionDate() != null) {
+            record.setTransactionDate(request.getTransactionDate());
+        }
+
+        FinancialRecord updatedRecord = recordRepository.save(record);
+        return new FinancialRecordResponseDTO(updatedRecord);
     }
 
     @Override
     public void deleteRecord(String displayId) {
+        // Find using creator to ensure user owns it (ADMIN exception logic if they need cross-user could be added, but per-user isolated forms typical basis)
         FinancialRecord record = recordRepository.findByDisplayId(displayId)
                 .orElseThrow(() -> new ResourceNotFoundException("FinancialRecord with id " + displayId + " not found."));
         recordRepository.delete(record);
