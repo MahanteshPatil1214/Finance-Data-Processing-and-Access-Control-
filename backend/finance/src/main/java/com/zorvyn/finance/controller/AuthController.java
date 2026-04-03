@@ -12,9 +12,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+/**
+ * REST controller for managing authentication.
+ * Provides endpoints for user registration and login.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Endpoints for user registration and authentication")
 public class AuthController {
 
     private final UserService userService;
@@ -22,12 +31,27 @@ public class AuthController {
     private final com.zorvyn.finance.security.CustomUserDetailsService userDetailsService;
     private final com.zorvyn.finance.security.JwtUtil jwtUtil;
 
+    /**
+     * Registers a new user.
+     *
+     * @param request the user registration details
+     * @return the registered user details
+     */
+    @Operation(summary = "Register a new user", description = "Creates a new user account.")
+    @ApiResponse(responseCode = "201", description = "User successfully registered")
     @PostMapping("/register")
     public ResponseEntity<UserResponseDTO> register(@Valid @RequestBody UserRegistrationRequestDTO request) {
         UserResponseDTO response = userService.registerUser(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    /**
+     * Authenticates a user and generates a JWT token.
+     *
+     * @param request the login credentials (email and password)
+     * @return a JWT token if authentication is successful
+     */
+    @Operation(summary = "Authenticate a user", description = "Validates credentials and returns a JWT token.")
     @PostMapping("/login")
     public ResponseEntity<com.zorvyn.finance.DTOs.AuthResponseDTO> login(@Valid @RequestBody com.zorvyn.finance.DTOs.AuthRequestDTO request) {
         authenticationManager.authenticate(
