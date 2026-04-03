@@ -12,7 +12,7 @@ public interface FinancialRecordService {
 
     void saveRecord(FinancialRecordRequestDTO request);
 
-    Page<FinancialRecordResponseDTO> getAllRecords(Pageable pageable);
+    Page<FinancialRecordResponseDTO> getAllRecords(com.zorvyn.finance.DTOs.FinancialRecordFilterDTO filter, Pageable pageable);
 
     FinancialRecordResponseDTO getRecordById(String displayId);
 

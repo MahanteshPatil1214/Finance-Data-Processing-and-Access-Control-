@@ -1,6 +1,7 @@
 package com.zorvyn.finance.controller;
 
 import com.zorvyn.finance.DTOs.DashboardSummaryDTO;
+import com.zorvyn.finance.DTOs.FinancialRecordFilterDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordRequestDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordResponseDTO;
 import com.zorvyn.finance.service.FinancialRecordService;
@@ -43,14 +44,17 @@ public class FinancialRecordController {
     /**
      * Retrieves a paginated list of all financial records.
      *
+     * @param filter the optional filter criteria for the records
      * @param pageable pagination and sorting details
      * @return a page of financial records
      */
-    @Operation(summary = "Get all financial records", description = "Retrieves a paginated list of all records. Requires ADMIN or ANALYST role.")
+    @Operation(summary = "Get all financial records", description = "Retrieves a paginated list of all records with optional filtering. Requires ADMIN or ANALYST role.")
     @PreAuthorize("hasAnyRole('ADMIN', 'ANALYST')")
     @GetMapping
-    public ResponseEntity<Page<FinancialRecordResponseDTO>> getAllRecords(Pageable pageable) {
-        return ResponseEntity.ok(recordService.getAllRecords(pageable));
+    public ResponseEntity<Page<FinancialRecordResponseDTO>> getAllRecords(
+            @ModelAttribute FinancialRecordFilterDTO filter, 
+            Pageable pageable) {
+        return ResponseEntity.ok(recordService.getAllRecords(filter, pageable));
     }
 
     /**

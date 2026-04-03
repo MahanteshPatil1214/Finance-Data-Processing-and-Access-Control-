@@ -10,7 +10,10 @@ import com.zorvyn.finance.repository.FinancialRecordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import com.zorvyn.finance.DTOs.FinancialRecordFilterDTO;
+import com.zorvyn.finance.repository.FinancialRecordSpecification;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -81,8 +84,31 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     }
 
     @Override
-    public Page<FinancialRecordResponseDTO> getAllRecords(Pageable pageable) {
-        return recordRepository.findAllByCreator_Email(getCurrentUserEmail(), pageable).map(FinancialRecordResponseDTO::new);
+    public Page<FinancialRecordResponseDTO> getAllRecords(FinancialRecordFilterDTO filter, Pageable pageable) {
+        Specification<FinancialRecord> spec = FinancialRecordSpecification.hasCreatorEmail(getCurrentUserEmail());
+
+        if (filter != null) {
+            if (filter.getType() != null) {
+                spec = spec.and(FinancialRecordSpecification.hasType(filter.getType()));
+            }
+            if (filter.getCategory() != null) {
+                spec = spec.and(FinancialRecordSpecification.hasCategory(filter.getCategory()));
+            }
+            if (filter.getMinAmount() != null) {
+                spec = spec.and(FinancialRecordSpecification.amountGreaterThanOrEqualTo(filter.getMinAmount()));
+            }
+            if (filter.getMaxAmount() != null) {
+                spec = spec.and(FinancialRecordSpecification.amountLessThanOrEqualTo(filter.getMaxAmount()));
+            }
+            if (filter.getStartDate() != null) {
+                spec = spec.and(FinancialRecordSpecification.dateGreaterThanOrEqualTo(filter.getStartDate()));
+            }
+            if (filter.getEndDate() != null) {
+                spec = spec.and(FinancialRecordSpecification.dateLessThanOrEqualTo(filter.getEndDate()));
+            }
+        }
+
+        return recordRepository.findAll(spec, pageable).map(FinancialRecordResponseDTO::new);
     }
 
     @Override
