@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -52,8 +53,8 @@ public class FinancialRecordController {
     @PreAuthorize("hasAnyRole('ADMIN', 'ANALYST')")
     @GetMapping
     public ResponseEntity<Page<FinancialRecordResponseDTO>> getAllRecords(
-            @ModelAttribute FinancialRecordFilterDTO filter, 
-            Pageable pageable) {
+            @ParameterObject @ModelAttribute FinancialRecordFilterDTO filter,
+            @ParameterObject Pageable pageable) {
         return ResponseEntity.ok(recordService.getAllRecords(filter, pageable));
     }
 
