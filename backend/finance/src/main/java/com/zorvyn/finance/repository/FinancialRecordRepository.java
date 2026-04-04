@@ -6,8 +6,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,4 +43,11 @@ public interface FinancialRecordRepository extends JpaRepository<FinancialRecord
 
     @Query("SELECT f.creator.email, SUM(f.amount) FROM FinancialRecord f WHERE f.type = 'EXPENSE' AND f.isDeleted = false GROUP BY f.creator.email HAVING SUM(f.amount) > :threshold")
     List<Object[]> findHighSpenders(BigDecimal threshold);
+
+    @Query("SELECT SUM(f.amount) FROM FinancialRecord f " +
+            "WHERE f.isDeleted = false AND f.transactionDate >= :start AND f.transactionDate < :end")
+    BigDecimal sumVolumeInRange(
+            @Param("start") LocalDateTime start, 
+            @Param("end") LocalDateTime end
+    );
 }

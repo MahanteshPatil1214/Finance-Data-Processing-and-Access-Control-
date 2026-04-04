@@ -1,6 +1,7 @@
 package com.zorvyn.finance.controller;
 
 import com.zorvyn.finance.DTOs.HighSpenderDTO;
+import com.zorvyn.finance.DTOs.TrendAnalysisDTO;
 import com.zorvyn.finance.service.AnalystFinancialService;
 import com.zorvyn.finance.service.FinancialRecordService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,5 +38,12 @@ public class AnalystController {
     public ResponseEntity<List<HighSpenderDTO>> getHighSpenders(
             @RequestParam(defaultValue = "50000") BigDecimal threshold) {
         return ResponseEntity.ok(recordService.getHighSpenderAlerts(threshold));
+    }
+
+    @Operation(summary = "Get MoM Trend Analysis", description = "Compares the last 30 days of platform volume to the previous 30 days.")
+    @PreAuthorize("hasRole('ANALYST')")
+    @GetMapping("/trends/mom")
+    public ResponseEntity<TrendAnalysisDTO> getMoMTrend() {
+        return ResponseEntity.ok(recordService.getMonthOverMonthTrend());
     }
 }

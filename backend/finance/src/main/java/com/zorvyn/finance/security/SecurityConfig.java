@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/api/meta/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    .requestMatchers("/api/analyst/**").hasRole("ANALYST")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
