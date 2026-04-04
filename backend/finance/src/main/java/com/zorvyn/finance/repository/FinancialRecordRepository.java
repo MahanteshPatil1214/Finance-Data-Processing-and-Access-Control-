@@ -14,4 +14,19 @@ public interface FinancialRecordRepository extends JpaRepository<FinancialRecord
     List<FinancialRecord> findAllByCreator_Email(String email);
     Page<FinancialRecord> findAllByCreator_Email(String email, Pageable pageable);
     Optional<FinancialRecord> findByDisplayIdAndCreator_Email(String displayId, String email);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(f.amount) FROM FinancialRecord f WHERE f.creator = :user AND f.type = 'EXPENSE' AND f.transactionDate >= :startDate AND f.transactionDate < :endDate AND f.category = :category")
+    java.math.BigDecimal sumExpensesByCategory(
+        @org.springframework.data.repository.query.Param("user") com.zorvyn.finance.model.User user,
+        @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
+        @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate,
+        @org.springframework.data.repository.query.Param("category") com.zorvyn.finance.model.Category category
+    );
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(f.amount) FROM FinancialRecord f WHERE f.creator = :user AND f.type = 'EXPENSE' AND f.transactionDate >= :startDate AND f.transactionDate < :endDate")
+    java.math.BigDecimal sumTotalExpenses(
+        @org.springframework.data.repository.query.Param("user") com.zorvyn.finance.model.User user,
+        @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,
+        @org.springframework.data.repository.query.Param("endDate") java.time.LocalDateTime endDate
+    );
 }
