@@ -18,8 +18,8 @@ public class Budget extends AbstractMappedEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = true)
+    @ManyToOne
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @Column(nullable = false, precision = 19, scale = 4)

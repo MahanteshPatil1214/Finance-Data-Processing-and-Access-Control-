@@ -4,6 +4,7 @@ import com.zorvyn.finance.DTOs.DashboardSummaryDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordRequestDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordResponseDTO;
 import com.zorvyn.finance.exception.ResourceNotFoundException;
+import com.zorvyn.finance.model.Category;
 import com.zorvyn.finance.model.FinancialRecord;
 import com.zorvyn.finance.model.TransactionType;
 import com.zorvyn.finance.repository.FinancialRecordRepository;
@@ -27,7 +28,14 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     private FinancialRecordRepository recordRepository;
 
     @Autowired
+    private final CategoryService categoryService;
+
+    @Autowired
     private com.zorvyn.finance.repository.UserRepository userRepository;
+
+    public FinancialRecordServiceImpl(CategoryService categoryService) {
+        this.categoryService = categoryService;
+    }
 
     private String getCurrentUserEmail() {
         return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
@@ -47,9 +55,10 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
                 .map(FinancialRecord::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Updated: Accessing the name property of the Category Entity
         var breakdown = records.stream()
                 .collect(Collectors.groupingBy(
-                        r -> r.getCategory().name(),
+                        r -> r.getCategory().getName(),
                         Collectors.mapping(FinancialRecord::getAmount,
                                 Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
                 ));
@@ -67,15 +76,18 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         FinancialRecord record = new FinancialRecord();
         record.setAmount(request.getAmount());
         record.setType(request.getType());
-        record.setCategory(request.getCategory());
         record.setDescription(request.getDescription());
+
+        // Updated: Fetch the Category Entity from DB using the Service
+        // Assumes your RequestDTO now passes the category name as a String
+        com.zorvyn.finance.model.Category category = categoryService.getCategoryByName(request.getCategoryName());
+        record.setCategory(category);
 
         // Attach creator
         com.zorvyn.finance.model.User creator = userRepository.findByEmail(getCurrentUserEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         record.setCreator(creator);
 
-        // Defaults to current time if missing
         record.setTransactionDate(
                 request.getTransactionDate() != null ? request.getTransactionDate() : LocalDateTime.now()
         );
@@ -122,11 +134,15 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
     public FinancialRecordResponseDTO updateRecord(String displayId, FinancialRecordRequestDTO request) {
         FinancialRecord record = recordRepository.findByDisplayIdAndCreator_Email(displayId, getCurrentUserEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("FinancialRecord with id " + displayId + " not found or unauthorized."));
-        
+
         record.setAmount(request.getAmount());
         record.setType(request.getType());
-        record.setCategory(request.getCategory());
         record.setDescription(request.getDescription());
+
+        // Updated: Update the category relationship
+        Category category = categoryService.getCategoryByName(request.getCategoryName());
+        record.setCategory(category);
+
         if (request.getTransactionDate() != null) {
             record.setTransactionDate(request.getTransactionDate());
         }

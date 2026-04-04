@@ -23,9 +23,9 @@ public class FinancialRecord extends AbstractMappedEntity {
     @Column(nullable = false)
     private TransactionType type; // INCOME or EXPENSE
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Category category; // e.g., Salary, Food, Rent
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     private String description;
 

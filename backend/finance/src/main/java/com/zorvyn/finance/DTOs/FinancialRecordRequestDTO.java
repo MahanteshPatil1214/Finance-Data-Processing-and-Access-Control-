@@ -17,8 +17,7 @@ public class FinancialRecordRequestDTO {
     @NotNull(message = "Type (INCOME/EXPENSE) is required")
     private TransactionType type;
 
-    @NotNull(message = "Category is required")
-    private Category category;
+    private String categoryName;
 
     private String description;
 

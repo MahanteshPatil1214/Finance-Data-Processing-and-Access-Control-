@@ -5,9 +5,11 @@ import com.zorvyn.finance.model.FinancialRecord;
 import com.zorvyn.finance.model.Role;
 import com.zorvyn.finance.model.TransactionType;
 import com.zorvyn.finance.model.User;
+import com.zorvyn.finance.repository.CategoryRepository;
 import com.zorvyn.finance.repository.FinancialRecordRepository;
 import com.zorvyn.finance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -19,24 +21,46 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
+    @Autowired
     private final UserRepository userRepository;
+
     private final FinancialRecordRepository financialRecordRepository;
+
     private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Override
     public void run(String... args) {
+        // 1. ALWAYS initialize categories first!
+        initializeCategories();
+
         if (userRepository.count() == 0) {
             User admin = createUser("admin@zorvyn.com", "admin@123", Role.ADMIN);
-            User analyst = createUser("analyst@zorvyn.com", "analyst123", Role.ANALYST);
-            User viewer = createUser("viewer@zorvyn.com", "viewer123", Role.VIEWER);
+            createUser("analyst@zorvyn.com", "analyst123", Role.ANALYST);
+            createUser("viewer@zorvyn.com", "viewer123", Role.VIEWER);
 
             if (financialRecordRepository.count() == 0) {
-                createRecord(admin, BigDecimal.valueOf(5000), TransactionType.INCOME, Category.SALARY, "Monthly Salary", LocalDateTime.now().minusDays(5));
-                createRecord(admin, BigDecimal.valueOf(1500), TransactionType.INCOME, Category.INVESTMENTS, "Stock Dividends", LocalDateTime.now().minusDays(3));
-                createRecord(admin, BigDecimal.valueOf(200), TransactionType.INCOME, Category.OTHERS, "Gift", LocalDateTime.now().minusDays(2));
-                
-                createRecord(admin, BigDecimal.valueOf(1200), TransactionType.EXPENSE, Category.RENT_AND_BILLS, "Monthly Rent", LocalDateTime.now().minusDays(1));
-                createRecord(admin, BigDecimal.valueOf(300), TransactionType.EXPENSE, Category.FOOD_AND_DINING, "Groceries", LocalDateTime.now());
+                // 2. Fetch the newly created Category entities from the DB
+                Category salary = categoryRepository.findByNameIgnoreCase("SALARY")
+                        .orElseThrow(() -> new RuntimeException("Category SALARY not found"));
+                Category investments = categoryRepository.findByNameIgnoreCase("INVESTMENTS")
+                        .orElseThrow(() -> new RuntimeException("Category INVESTMENTS not found"));
+                Category others = categoryRepository.findByNameIgnoreCase("OTHERS")
+                        .orElseThrow(() -> new RuntimeException("Category OTHERS not found"));
+                Category rent = categoryRepository.findByNameIgnoreCase("RENT")
+                        .orElseThrow(() -> new RuntimeException("Category RENT not found"));
+                Category food = categoryRepository.findByNameIgnoreCase("FOOD")
+                        .orElseThrow(() -> new RuntimeException("Category FOOD not found"));
+
+                // 3. Create records using the fetched entities
+                createRecord(admin, BigDecimal.valueOf(5000), TransactionType.INCOME, salary, "Monthly Salary", LocalDateTime.now().minusDays(5));
+                createRecord(admin, BigDecimal.valueOf(1500), TransactionType.INCOME, investments, "Stock Dividends", LocalDateTime.now().minusDays(3));
+                createRecord(admin, BigDecimal.valueOf(200), TransactionType.INCOME, others, "Gift", LocalDateTime.now().minusDays(2));
+
+                createRecord(admin, BigDecimal.valueOf(1200), TransactionType.EXPENSE, rent, "Monthly Rent", LocalDateTime.now().minusDays(1));
+                createRecord(admin, BigDecimal.valueOf(300), TransactionType.EXPENSE, food, "Groceries", LocalDateTime.now());
             }
         }
     }
@@ -60,5 +84,18 @@ public class DataInitializer implements CommandLineRunner {
         record.setCreator(creator);
         // displayId is handled in PrePersist hook of AbstractMappedEntity
         financialRecordRepository.save(record);
+    }
+
+    private void initializeCategories() {
+        if (categoryRepository.count() == 0) {
+            // Make sure these names match exactly what you look up above
+            java.util.List<String> defaultNames = java.util.List.of("FOOD", "SALARY", "RENT", "INVESTMENTS", "OTHERS");
+            defaultNames.forEach(name -> {
+                Category category = new Category();
+                category.setName(name);
+                category.setActive(true);
+                categoryRepository.save(category);
+            });
+        }
     }
 }
