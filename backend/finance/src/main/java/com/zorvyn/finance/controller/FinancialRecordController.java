@@ -4,7 +4,10 @@ import com.zorvyn.finance.DTOs.DashboardSummaryDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordFilterDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordRequestDTO;
 import com.zorvyn.finance.DTOs.FinancialRecordResponseDTO;
+import com.zorvyn.finance.model.User;
+import com.zorvyn.finance.repository.UserRepository;
 import com.zorvyn.finance.service.FinancialRecordService;
+import com.zorvyn.finance.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,7 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  * REST controller for managing financial records.
@@ -28,7 +35,9 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Financial Records", description = "Endpoints for managing financial data")
 public class FinancialRecordController {
 
+    private final UserRepository userRepository;
     private final FinancialRecordService recordService;
+    private final UserService userService;
 
     /**
      * Retrieves the dashboard summary of financial records.
@@ -40,6 +49,22 @@ public class FinancialRecordController {
     @GetMapping("/summary")
     public ResponseEntity<DashboardSummaryDTO> getDashboardSummary() {
         return ResponseEntity.ok(recordService.getSummary());
+    }
+
+    @Operation(summary = "Get category breakdown", description = "Provides spending per category for the current month.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ANALYST', 'VIEWER')")
+    @GetMapping("/summary/category-breakdown")
+    public ResponseEntity<Map<String, BigDecimal>> getCategoryBreakdown(java.security.Principal principal) {
+        // 1. Get the email from the logged-in session
+        String email = principal.getName();
+
+        // 2. Find your ACTUAL database user entity by email
+        // NOTE: You must have userRepository injected in this controller for this to work
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
+        // 3. Pass your actual User entity to the service
+        return ResponseEntity.ok(userService.getMonthlyCategoryBreakdown(user));
     }
 
     /**

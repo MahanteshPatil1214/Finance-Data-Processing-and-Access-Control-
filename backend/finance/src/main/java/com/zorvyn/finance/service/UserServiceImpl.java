@@ -3,15 +3,24 @@ package com.zorvyn.finance.service;
 import com.zorvyn.finance.DTOs.UserResponseDTO;
 import com.zorvyn.finance.exception.ResourceNotFoundException;
 import com.zorvyn.finance.model.User;
+import com.zorvyn.finance.repository.FinancialRecordRepository;
 import com.zorvyn.finance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    private final FinancialRecordRepository recordRepository;
 
     private final UserRepository userRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
@@ -63,5 +72,24 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + displayId));
         user.setActive(active);
         return new UserResponseDTO(userRepository.save(user));
+    }
+
+    @Override
+    public Map<String, BigDecimal> getMonthlyCategoryBreakdown(User user) {
+        // Logic: First day of current month (April 1st)
+        LocalDateTime startOfMonth = LocalDateTime.now()
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+
+        List<Object[]> results = recordRepository.getSpendingByCategoryCustom(user.getId(), startOfMonth);
+
+        Map<String, BigDecimal> breakdown = new HashMap<>();
+        for (Object[] result : results) {
+            breakdown.put((String) result[0], (BigDecimal) result[1]);
+        }
+        return breakdown;
     }
 }

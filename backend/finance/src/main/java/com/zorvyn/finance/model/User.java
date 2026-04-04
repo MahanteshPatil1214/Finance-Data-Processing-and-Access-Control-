@@ -2,6 +2,7 @@ package com.zorvyn.finance.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
 @Table(name = "users")

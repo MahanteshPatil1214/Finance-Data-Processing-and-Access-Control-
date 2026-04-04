@@ -55,4 +55,16 @@ public interface FinancialRecordRepository extends JpaRepository<FinancialRecord
     BigDecimal getAverageExpenseForUser(@Param("userId") UUID userId);
 
     List<FinancialRecord> findAllByTransactionDateAfterAndIsDeletedFalse(LocalDateTime date);
+
+    @Query("SELECT f.category.name, SUM(f.amount) FROM FinancialRecord f " +
+            "WHERE f.creator.id = :userId " +
+            "AND f.type = 'EXPENSE' " +
+            "AND f.isDeleted = false " +
+            "AND f.transactionDate >= :startDate " +
+            "GROUP BY f.category.name")
+    List<Object[]> getSpendingByCategoryCustom(
+            @Param("userId") UUID userId,
+            @Param("startDate") LocalDateTime startDate
+    );
+
 }
