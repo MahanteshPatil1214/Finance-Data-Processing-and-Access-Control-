@@ -47,7 +47,12 @@ public interface FinancialRecordRepository extends JpaRepository<FinancialRecord
     @Query("SELECT SUM(f.amount) FROM FinancialRecord f " +
             "WHERE f.isDeleted = false AND f.transactionDate >= :start AND f.transactionDate < :end")
     BigDecimal sumVolumeInRange(
-            @Param("start") LocalDateTime start, 
+            @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("SELECT AVG(f.amount) FROM FinancialRecord f WHERE f.creator.id = :userId AND f.type = 'EXPENSE' AND f.isDeleted = false")
+    BigDecimal getAverageExpenseForUser(@Param("userId") UUID userId);
+
+    List<FinancialRecord> findAllByTransactionDateAfterAndIsDeletedFalse(LocalDateTime date);
 }

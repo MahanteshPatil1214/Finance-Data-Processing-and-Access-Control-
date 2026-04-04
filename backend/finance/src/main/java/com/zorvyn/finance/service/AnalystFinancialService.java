@@ -1,5 +1,6 @@
 package com.zorvyn.finance.service;
 
+import com.zorvyn.finance.DTOs.AnomalyAlertDTO;
 import com.zorvyn.finance.DTOs.HighSpenderDTO;
 import com.zorvyn.finance.DTOs.TrendAnalysisDTO;
 
@@ -14,4 +15,6 @@ public interface AnalystFinancialService {
     List<HighSpenderDTO> getHighSpenderAlerts(BigDecimal threshold);
 
     TrendAnalysisDTO getMonthOverMonthTrend();
+
+    List<AnomalyAlertDTO> getRecentAnomalies();
 }

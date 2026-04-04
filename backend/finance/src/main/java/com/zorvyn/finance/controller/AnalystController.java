@@ -1,5 +1,6 @@
 package com.zorvyn.finance.controller;
 
+import com.zorvyn.finance.DTOs.AnomalyAlertDTO;
 import com.zorvyn.finance.DTOs.HighSpenderDTO;
 import com.zorvyn.finance.DTOs.TrendAnalysisDTO;
 import com.zorvyn.finance.service.AnalystFinancialService;
@@ -46,4 +47,11 @@ public class AnalystController {
     public ResponseEntity<TrendAnalysisDTO> getMoMTrend() {
         return ResponseEntity.ok(recordService.getMonthOverMonthTrend());
     }
-}
+
+    @Operation(summary = "Detect financial anomalies", description = "Flags transactions 500% higher than the user's historical average.")
+    @PreAuthorize("hasAnyAuthority('ANALYST', 'ROLE_ANALYST')")
+    @GetMapping("/alerts")
+    public ResponseEntity<List<AnomalyAlertDTO>> getAlerts() {
+        List<AnomalyAlertDTO> alerts = recordService.getRecentAnomalies();
+        return ResponseEntity.ok(alerts);
+}}
