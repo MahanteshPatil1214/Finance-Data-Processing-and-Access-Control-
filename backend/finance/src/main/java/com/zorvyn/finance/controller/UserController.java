@@ -3,6 +3,7 @@ package com.zorvyn.finance.controller;
 import com.zorvyn.finance.DTOs.UserResponseDTO;
 import com.zorvyn.finance.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "User Management", description = "Endpoints for managing users")
 public class UserController {
 
-    private final UserService userService;
+    @Autowired
+    private  UserService userService;
 
     /**
      * Retrieves all users.

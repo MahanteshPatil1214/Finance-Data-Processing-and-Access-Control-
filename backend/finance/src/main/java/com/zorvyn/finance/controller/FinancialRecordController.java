@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -31,13 +32,17 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/records")
-@RequiredArgsConstructor
 @Tag(name = "Financial Records", description = "Endpoints for managing financial data")
 public class FinancialRecordController {
 
-    private final UserRepository userRepository;
-    private final FinancialRecordService recordService;
-    private final UserService userService;
+    @Autowired
+    private  UserRepository userRepository;
+
+    @Autowired
+    private FinancialRecordService recordService;
+
+    @Autowired
+    private  UserService userService;
 
     /**
      * Retrieves the dashboard summary of financial records.
@@ -51,6 +56,18 @@ public class FinancialRecordController {
         return ResponseEntity.ok(recordService.getSummary());
     }
 
+    /**
+     * Retrieves a breakdown of spending by category for the authenticated user's current month.
+     * <p>
+     * This method extracts the user's identity from the security principal,
+     * validates their existence in the database, and returns a mapped distribution
+     * of their expenses.
+     * </p>
+     *
+     * @param principal The security principal of the logged-in user.
+     * @return A map where keys are category names and values are the total amounts spent.
+     * @throws RuntimeException if the authenticated user cannot be found in the database.
+     */
     @Operation(summary = "Get category breakdown", description = "Provides spending per category for the current month.")
     @PreAuthorize("hasAnyRole('ADMIN', 'ANALYST', 'VIEWER')")
     @GetMapping("/summary/category-breakdown")
@@ -128,10 +145,9 @@ public class FinancialRecordController {
     }
 
     /**
-     * Deletes a financial record.
-     *
-     * @param displayId the display ID of the record to delete
-     * @return a response indicating successful deletion
+     * Soft-deletes or removes a financial record from the system.
+     * * @param displayId The unique public identifier of the record to be removed.
+     * @return HTTP 204 No Content upon successful deletion.
      */
     @Operation(summary = "Delete a financial record", description = "Removes a standard financial record from the database. Requires ADMIN role.")
     @ApiResponse(responseCode = "204", description = "Financial record deleted successfully")

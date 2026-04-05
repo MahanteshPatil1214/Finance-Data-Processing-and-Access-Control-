@@ -22,6 +22,17 @@ public class AnalystFinancialServiceImpl implements AnalystFinancialService{
     @Autowired
     private FinancialRecordRepository repository;
 
+    /**
+     * Aggregates global platform metrics, including total monetary volume and
+     * transaction distribution by category.
+     * * <p>The method performs the following:
+     * 1. Sums all transaction amounts across the entire platform.
+     * 2. Maps raw category statistics from the repository into a readable Map
+     * where the key is the Category Name and the value is the count of records.
+     * * @return A {@link Map} containing:
+     * - "totalPlatformVolume": The sum of all transactions (BigDecimal)
+     * - "categoryDistribution": A nested Map of category names to counts (Map<String, Long>)
+     */
     @Override
     public Map<String, Object> getGlobalPlatformStats() {
         BigDecimal totalVolume = repository.sumAllTransactions();
@@ -41,6 +52,17 @@ public class AnalystFinancialServiceImpl implements AnalystFinancialService{
         return stats;
     }
 
+    /**
+     * Identifies users whose cumulative transaction volume exceeds a specified threshold.
+     * * <p>This method processes raw results from the database (Object arrays) and
+     * transforms them into a list of HighSpenderDTOs. It is typically used by
+     * analysts to monitor high-value accounts or detect unusual spending patterns
+     * that require manual review.
+     * * @param threshold The minimum total spending amount (BigDecimal) required to
+     * flag a user as a "high spender".
+     * @return A {@link List} of {@link HighSpenderDTO} objects containing user
+     * identifiers and their corresponding total volume.
+     */
     @Override
     public List<HighSpenderDTO> getHighSpenderAlerts(BigDecimal threshold) {
         List<Object[]> results = repository.findHighSpenders(threshold);
@@ -49,6 +71,10 @@ public class AnalystFinancialServiceImpl implements AnalystFinancialService{
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    /**
+     * Calculates the platform growth by comparing two 30-day windows.
+     * Uses HALF_UP rounding for precision in percentage calculations.
+     */
     @Override
     public TrendAnalysisDTO getMonthOverMonthTrend() {
         LocalDateTime now = LocalDateTime.now();
@@ -79,6 +105,14 @@ public class AnalystFinancialServiceImpl implements AnalystFinancialService{
         return new TrendAnalysisDTO(currentTotal, previousTotal, pctChange, status);
     }
 
+    /**
+     * Detects financial outliers by comparing current expenses against historical averages.
+     * * Logic:
+     * 1. Filters for EXPENSE types only.
+     * 2. Calculates a multiplier (Transaction Amount / User Average).
+     * 3. Flags transactions that are 3x (300%) or higher than the average.
+     * * @return List of {@link AnomalyAlertDTO} containing spike details.
+     */
     @Override
     public List<AnomalyAlertDTO> getRecentAnomalies() {
         LocalDateTime oneDayAgo = LocalDateTime.now().minusDays(1);

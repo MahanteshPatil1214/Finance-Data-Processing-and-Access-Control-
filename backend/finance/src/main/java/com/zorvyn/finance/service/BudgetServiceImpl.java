@@ -10,6 +10,7 @@ import com.zorvyn.finance.repository.BudgetRepository;
 import com.zorvyn.finance.repository.FinancialRecordRepository;
 import com.zorvyn.finance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +22,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of the {@link BudgetService} for managing user spending limits.
+ * This service calculates real-time budget utilization by comparing established
+ * limits against actual financial records for a given period.
+ */
 @Service
 @RequiredArgsConstructor
 public class BudgetServiceImpl implements BudgetService {
 
-    private final BudgetRepository budgetRepository;
-    private final FinancialRecordRepository financialRecordRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    private  BudgetRepository budgetRepository;
 
+    @Autowired
+    private  FinancialRecordRepository financialRecordRepository;
+
+    @Autowired
+    private  UserRepository userRepository;
+
+    /**
+     * Creates or updates a budget for a user.
+     * * <p>If a budget already exists for the specific category and month, the existing
+     * record is updated with the new limit amount. Otherwise, a new budget entry is created.</p>
+     * * @param userEmail The email of the user setting the budget.
+     * @param request    The budget details including category, limit, and period.
+     * @return A {@link BudgetResponseDTO} containing the saved budget state.
+     */
     @Override
     @Transactional
     public BudgetResponseDTO setBudget(String userEmail, BudgetRequestDTO request) {
@@ -53,6 +72,13 @@ public class BudgetServiceImpl implements BudgetService {
         return new BudgetResponseDTO(budgetRepository.save(budget));
     }
 
+    /**
+     * Retrieves all budgets configured by the user for a specific month.
+     * * @param userEmail The unique email of the user.
+     * @param year      The year of the budgets.
+     * @param month     The month of the budgets.
+     * @return A list of the user's budgets mapped to DTOs.
+     */
     @Override
     public List<BudgetResponseDTO> getBudgets(String userEmail, int year, int month) {
         User user = userRepository.findByEmail(userEmail)
@@ -64,6 +90,19 @@ public class BudgetServiceImpl implements BudgetService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Evaluates current spending against active budgets and generates alerts if
+     * spending thresholds are met or exceeded.
+     * * <p>Logic Flow:
+     * 1. Determines the date range for the specified month.
+     * 2. Calculates total expenses (either category-specific or global).
+     * 3. Computes utilization percentage.
+     * 4. Flags an alert if utilization is >= 80%.</p>
+     * * @param userEmail The user to check alerts for.
+     * @param year      The calendar year.
+     * @param month     The calendar month.
+     * @return A list of {@link BudgetAlertDTO} for budgets nearing or exceeding limits.
+     */
     @Override
     public List<BudgetAlertDTO> checkBudgetAlerts(String userEmail, int year, int month) {
         User user = userRepository.findByEmail(userEmail)

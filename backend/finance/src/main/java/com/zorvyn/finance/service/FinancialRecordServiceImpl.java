@@ -21,6 +21,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of {@link FinancialRecordService} providing comprehensive
+ * financial data management.
+ * <p>
+ * This service handles secure data access by filtering all queries based on
+ * the authenticated user's email, ensuring strict data isolation between users.
+ * </p>
+ */
 @Service
 public class FinancialRecordServiceImpl implements FinancialRecordService {
 
@@ -37,10 +45,23 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         this.categoryService = categoryService;
     }
 
+    /**
+     * Internal helper to extract the email of the currently authenticated user
+     * from the Spring Security Context.
+     * @return The email string of the logged-in user.
+     */
     private String getCurrentUserEmail() {
         return org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
+    /**
+     * Generates a real-time financial overview for the authenticated user.
+     * <p>
+     * Performs in-memory aggregation of the user's transaction history to calculate
+     * total income, total expenses, net balance, and a category-wise spending breakdown.
+     * </p>
+     * @return A {@link DashboardSummaryDTO} containing the aggregated metrics.
+     */
     @Override
     public DashboardSummaryDTO getSummary() {
         List<FinancialRecord> records = recordRepository.findAllByCreator_Email(getCurrentUserEmail());
@@ -71,6 +92,15 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         );
     }
 
+    /**
+     * Maps and persists a new financial transaction.
+     * <p>
+     * Automatically links the record to the authenticated user and fetches
+     * the appropriate {@link Category} entity by name.
+     * </p>
+     * @param request DTO containing the transaction details.
+     * @throws ResourceNotFoundException if the creator user cannot be verified.
+     */
     @Override
     public void saveRecord(FinancialRecordRequestDTO request) {
         FinancialRecord record = new FinancialRecord();
@@ -95,6 +125,16 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         recordRepository.save(record);
     }
 
+    /**
+     * Executes a dynamic search for financial records using JPA Specifications.
+     * <p>
+     * Filters are applied cumulatively (AND logic). If a filter field is null,
+     * it is ignored in the final SQL query.
+     * </p>
+     * @param filter   DTO containing search parameters like date range, type, and amount.
+     * @param pageable Pagination and sorting configuration.
+     * @return A paginated list of matching records.
+     */
     @Override
     public Page<FinancialRecordResponseDTO> getAllRecords(FinancialRecordFilterDTO filter, Pageable pageable) {
         Specification<FinancialRecord> spec = FinancialRecordSpecification.hasCreatorEmail(getCurrentUserEmail());
@@ -123,6 +163,12 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         return recordRepository.findAll(spec, pageable).map(FinancialRecordResponseDTO::new);
     }
 
+    /**
+     * Retrieves a single record, ensuring the authenticated user is the owner.
+     * @param displayId The public identifier of the record.
+     * @return The record mapped to a response DTO.
+     * @throws ResourceNotFoundException if the record doesn't exist or doesn't belong to the user.
+     */
     @Override
     public FinancialRecordResponseDTO getRecordById(String displayId) {
         FinancialRecord record = recordRepository.findByDisplayIdAndCreator_Email(displayId, getCurrentUserEmail())
@@ -130,6 +176,19 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         return new FinancialRecordResponseDTO(record);
     }
 
+    /**
+     * Updates an existing financial record with new details provided by the user.
+     * <p>
+     * <b>Security:</b> This method verifies that the record exists AND belongs
+     * to the currently authenticated user before applying any changes.
+     * If the category name in the request changes, it re-validates the new
+     * category against the database.
+     * </p>
+     * * @param displayId The unique public identifier of the record to update.
+     * @param request   DTO containing the updated amount, type, description, and category.
+     * @return A {@link FinancialRecordResponseDTO} representing the updated state.
+     * @throws ResourceNotFoundException if the record is missing or the user is unauthorized.
+     */
     @Override
     public FinancialRecordResponseDTO updateRecord(String displayId, FinancialRecordRequestDTO request) {
         FinancialRecord record = recordRepository.findByDisplayIdAndCreator_Email(displayId, getCurrentUserEmail())
@@ -151,6 +210,16 @@ public class FinancialRecordServiceImpl implements FinancialRecordService {
         return new FinancialRecordResponseDTO(updatedRecord);
     }
 
+    /**
+     * Permanently removes a financial record from the system.
+     * <p>
+     * <b>Constraint:</b> Only the record with the matching displayId is removed.
+     * In a production environment, this could be updated to a "Soft Delete"
+     * to preserve audit trails, but currently, it performs a physical deletion.
+     * </p>
+     * * @param displayId The unique public identifier of the record to be deleted.
+     * @throws ResourceNotFoundException if the record ID does not exist in the system.
+     */
     @Override
     public void deleteRecord(String displayId) {
         // Find using creator to ensure user owns it (ADMIN exception logic if they need cross-user could be added, but per-user isolated forms typical basis)

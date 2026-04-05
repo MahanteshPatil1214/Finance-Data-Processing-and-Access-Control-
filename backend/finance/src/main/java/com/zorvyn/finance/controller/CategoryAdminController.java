@@ -16,16 +16,29 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Administrative controller for managing financial categories.
+ * This controller is restricted to users with the 'ADMIN' role and allows for
+ * the creation and modification of the system-wide category registry.
+ */
 @RestController
 @RequestMapping("/api/admin/categories")
-@RequiredArgsConstructor
 @Tag(name = "Admin Category Management")
 public class CategoryAdminController {
 
     @Autowired
-    private final CategoryService categoryService;
+    private CategoryService categoryService;
 
-    @Operation(summary = "Admin only: Create a new category")
+    /**
+     * Creates a new financial category for the platform.
+     * Restricted to users with Administrative privileges.
+     * * @param request DTO containing the category name and optional description.
+     * @return {@link CategoryResponseDTO} containing the created category details.
+     * @status 201 Created if the category is successfully persisted.
+     * @auth Requires 'ROLE_ADMIN'
+     */
+    @Operation(summary = "Admin only: Create a new category",
+            description = "Adds a new category to the system. Only accessible by administrators.")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CategoryResponseDTO> create(@RequestBody CategoryRequestDTO request) {

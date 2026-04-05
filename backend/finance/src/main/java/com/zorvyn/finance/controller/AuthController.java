@@ -2,11 +2,15 @@ package com.zorvyn.finance.controller;
 
 import com.zorvyn.finance.DTOs.UserRegistrationRequestDTO;
 import com.zorvyn.finance.DTOs.UserResponseDTO;
+import com.zorvyn.finance.security.CustomUserDetailsService;
+import com.zorvyn.finance.security.JwtUtil;
 import com.zorvyn.finance.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,10 +30,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Authentication", description = "Endpoints for user registration and authentication")
 public class AuthController {
 
-    private final UserService userService;
-    private final org.springframework.security.authentication.AuthenticationManager authenticationManager;
-    private final com.zorvyn.finance.security.CustomUserDetailsService userDetailsService;
-    private final com.zorvyn.finance.security.JwtUtil jwtUtil;
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     /**
      * Registers a new user.

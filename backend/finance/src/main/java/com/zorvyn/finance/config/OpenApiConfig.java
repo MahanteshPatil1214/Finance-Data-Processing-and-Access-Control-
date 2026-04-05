@@ -8,6 +8,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration for OpenAPI/Swagger documentation.
+ * Defines the API metadata, versioning, and global security requirements (JWT Bearer Auth)
+ * for the Finance Analytics & Management System.
+ */
 @Configuration
 @OpenAPIDefinition(
         info = @Info(

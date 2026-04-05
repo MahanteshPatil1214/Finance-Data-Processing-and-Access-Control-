@@ -17,20 +17,28 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Component responsible for seeding the database with initial data upon application startup.
+ * It initializes default categories, system users, and sample financial records
+ * if the database is empty.
+ */
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired
     private final UserRepository userRepository;
 
     private final FinancialRecordRepository financialRecordRepository;
 
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private CategoryRepository categoryRepository;
 
+    private final CategoryRepository categoryRepository;
+
+    /**
+     * Executes the data seeding logic on startup.
+     * @param args incoming main method arguments
+     */
     @Override
     public void run(String... args) {
         // 1. ALWAYS initialize categories first!
@@ -65,6 +73,13 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    /**
+     * Helper to create and persist a new user.
+     * @param email The user's unique email address
+     * @param password The raw password to be encoded
+     * @param role The authorization role assigned to the user
+     * @return The saved User entity
+     */
     private User createUser(String email, String password, Role role) {
         User user = new User();
         user.setEmail(email);
@@ -74,6 +89,15 @@ public class DataInitializer implements CommandLineRunner {
         return userRepository.save(user);
     }
 
+    /**
+     * Creates and persists a new financial record in the system.
+     * * @param creator     The user responsible for creating this entry
+     * @param amount      The monetary value of the transaction
+     * @param type        The type of transaction (e.g., INCOME or EXPENSE)
+     * @param category    The specific category entity associated with this record
+     * @param description A brief note describing the transaction
+     * @param date        The timestamp when the transaction occurred
+     */
     private void createRecord(User creator, BigDecimal amount, TransactionType type, Category category, String description, LocalDateTime date) {
         FinancialRecord record = new FinancialRecord();
         record.setAmount(amount);
@@ -86,6 +110,11 @@ public class DataInitializer implements CommandLineRunner {
         financialRecordRepository.save(record);
     }
 
+    /**
+     * Seeds the database with default financial categories if none exist.
+     * This method must be executed before creating financial records to ensure
+     * foreign key constraints are satisfied.
+     */
     private void initializeCategories() {
         if (categoryRepository.count() == 0) {
             // Make sure these names match exactly what you look up above
