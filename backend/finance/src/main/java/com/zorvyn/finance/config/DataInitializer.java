@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,6 +41,7 @@ public class DataInitializer implements CommandLineRunner {
      * @param args incoming main method arguments
      */
     @Override
+    @Transactional
     public void run(String... args) {
         // 1. ALWAYS initialize categories first!
         initializeCategories();

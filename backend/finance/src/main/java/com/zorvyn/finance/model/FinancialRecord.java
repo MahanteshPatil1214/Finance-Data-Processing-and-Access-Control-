@@ -51,7 +51,7 @@ public class FinancialRecord extends AbstractMappedEntity {
      * The classification category associated with this record.
      * Fetched lazily to optimize memory usage when only transaction totals are required.
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
